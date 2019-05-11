@@ -1,4 +1,4 @@
-NLP;Code;TAS20;F1;F2;F3;Tas20Time;Sex;Gender;Age;Dhand;Studies;SClass;Siblings;SibPos;Origin;Resid;Rtime;Ethnic;Job
+﻿NLP;Code;TAS20;F1;F2;F3;Tas20Time;Sex;Gender;Age;Dhand;Studies;SClass;Siblings;SibPos;Origin;Resid;Rtime;Ethnic;Job
 0;be8f0c722d0a0f4cd9d92c503e6f7583;42;16;10;16;254305;1;1;21;1;5;2;6;2;ES;ES;-1;Iberic;Psychology
 1;608af5455da8c250a87f81a5ed5c1942;55;15;20;15;103425;1;1;42;2;7;2;5;5;ES;ES;-1;Iberic;Psychology
 1;bc39e22ca5dba59fbd97c27987878f56;40;16;9;15;201637;2;2;22;1;5;2;2;2;ES;ES;-1;Iberic;Psychology
@@ -113,7 +113,7 @@ NLP;Code;TAS20;F1;F2;F3;Tas20Time;Sex;Gender;Age;Dhand;Studies;SClass;Siblings;S
 1;8be28615e7bc96a67974ba0ee3c57aa0;45;14;12;19;389235;1;1;36;1;5;2;2;2;ES;ES;-1;Iberic;Customer Care
 0;e164191b32b62e90ff63ceac2a50a1c5;29;7;5;17;107133;1;1;22;1;5;2;2;1;ES;ES;-1;Iberic;Engineer
 1;2f052997edc3c005cc16cd263210f05f;69;22;20;27;331256;1;1;38;1;4;2;2;1;CO;ES;12;Latin;Manager
-1;77c5a167a80e1953cd0ad9c29b036331;25;7;7;11;411014;1;1;24;1;6;2;2;1;ES;ES;-1;Iberic;Psic�logo
+1;77c5a167a80e1953cd0ad9c29b036331;25;7;7;11;411014;1;1;24;1;6;2;2;1;ES;ES;-1;Iberic;Psicólogo
 0;a90bd8ca1dccb01123c0a8cc2a59403c;38;11;10;17;275831;2;2;34;1;6;3;2;1;CO;CO;-1;Latin;Marketing
 1;21f81d0e1462187617f7f93d3e34a90d;50;21;12;17;154932;2;2;24;1;5;2;4;3;ES;ES;-1;Iberic;Marketing
 0;a128682eae663c31d9a88907217f05ab;61;24;14;23;137578;2;2;24;1;6;3;3;2;EC;EC;-1;Latin;Marketing
