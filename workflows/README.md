@@ -7,3 +7,5 @@ Raúl Arrabales Moreno (Psicobótica / Serendeepia Research)<br>
 <hr>
 
 - **ProlexitimPredictorNoTA:** Machine Learning Classifiers for Alexithymia (with no Text Analytics, just from sentiment scores). 
+
+<img src="ProlexitimPredictorNoTA.jpg">
