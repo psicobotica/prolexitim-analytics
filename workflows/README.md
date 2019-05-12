@@ -10,6 +10,7 @@ Raúl Arrabales Moreno (Psicobótica / Serendeepia Research)<br>
 
 <img src="ProlexitimPredictorNoTA.jpg">
 <hr>
+
 - **ProlexitimPredictorPLN:** Machine Learning Classifiers for Alexithymia (using BoW and TF/IDF). 
 
 <img src="ProlexitimPredictorPLN.jpg">
