@@ -21,4 +21,10 @@ Raúl Arrabales Moreno (Psicobótica / Serendeepia Research)<br>
 <img src="ProlexitimPredictor_v2.jpg">
 <hr>
 
+- **ProlexitimPredictorPLN-v3:** XGBoost (gradient boosted decision trees) Classifier for Alexithymia (using BoW, TF and Prolexitim Features. AUC > 0.9). 
+
+<img src="ProlexitimPredictor_v3.jpg">
+<hr>
+
+
 
