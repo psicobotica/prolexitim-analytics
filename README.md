@@ -7,4 +7,5 @@ Raúl Arrabales Moreno (Psicobótica / Serendeepia Research)<br>
 <hr>
 
 - **Folder data:** Experimentation datasets. 
-- **Folder scripts:** Jupyter ipynbs with data processing. 
+- **Folder scripts:** Jupyter ipynbs with data processing, descriptive and predictive models.
+- **Folder workflows:** Knime workflows with predictive models. 
