@@ -15,3 +15,10 @@ Raúl Arrabales Moreno (Psicobótica / Serendeepia Research)<br>
 
 <img src="ProlexitimPredictorPLN.jpg">
 <hr>
+
+- **ProlexitimPredictorPLN-v2:** Machine Learning Classifiers for Alexithymia (using BoW, TF and Prolexitim Features. AUC > 0.8 using a MultiLayer Perceptron). 
+
+<img src="ProlexitimPredictor_v2.jpg">
+<hr>
+
+
