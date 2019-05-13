@@ -9,3 +9,4 @@ Raúl Arrabales Moreno (Psicobótica / Serendeepia Research)<br>
 - **Folder data:** Experimentation datasets. 
 - **Folder scripts:** Jupyter ipynbs with data processing, descriptive and predictive models.
 - **Folder workflows:** Knime workflows with predictive models. 
+- **Folder detectors:** Deep Learning approaches to alexithymia language-based screening. Keras/TensorFlow RNN, LSTM, Word2Vec, Doc2Vec models. 
