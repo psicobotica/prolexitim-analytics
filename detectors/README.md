@@ -8,4 +8,8 @@ Raúl Arrabales Moreno (Psicobótica / Serendeepia Research)<br>
 <a target="_blank" href="http://www.conscious-robots.com/">http://www.conscious-robots.com/</a> <br>
 <hr>
 
-- **ProlexitimDetector-LSTM-v1:** LSTM model for binary classification (No Alexithymia, Possible Alexithymia). 
+- **ProlexitimDetector-LSTM-v1:** LSTM model for binary classification (No Alexithymia, Possible Alexithymia). Implemented in Keras (TensorFlow Backend). 
+
+- **TAS-NLP-Embeddings:** Word2Vec and Doc2Vec models training. Binary classification using a Logistic Regression Classifier fed with Doc2Vec feature vectors. 
+
+
