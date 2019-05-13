@@ -1,5 +1,5 @@
 # prolexitim-analytics
-Data Analytics for Prolexitim Product Line
+Data Analytics for Prolexitim Product Line (early diagnosis and treatment of alexithymia)
 <hr>
 May 2019.<br> Prolexitim dataset version 1.2 (MPGS-TFM-Submission).<br> 
 Raúl Arrabales Moreno (Psicobótica / Serendeepia Research)<br>
