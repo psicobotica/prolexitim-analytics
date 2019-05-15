@@ -26,5 +26,10 @@ Raúl Arrabales Moreno (Psicobótica / Serendeepia Research)<br>
 <img src="ProlexitimPredictor_v3.jpg">
 <hr>
 
+- **ProlexitimPredictorPLN-v4:** KNN Clustering for Alexithymia based on learned Word2Vec. 
+
+<img src="ProlexitimPredictor_v4.jpg">
+<hr>
+
 
 
