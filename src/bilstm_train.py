@@ -1,9 +1,15 @@
+from tools import process_data
+import logging
+import argparse
+import polyaxon_utils
+
 import os
 import pickle
-import logging
+
 import argparse
 import tensorflow as tf
 import types
+
 
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
@@ -20,9 +26,8 @@ from keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 
-import polyaxon_utils
 
-#from settings import *
+
 
 logger = logging.getLogger(__name__)
 
@@ -175,23 +180,18 @@ class RocAucEvaluation(Callback):
 if __name__ == '__main__':
 
     args = get_args()
-
-    test_file = os.path.join(args.input_path, args.test_filename)
-    logger.info(f"Reading test file {test_file}")
-    test = pd.read_csv(test_file)
-    test["comment_text"].fillna("fillna")
-    X_test = test["comment_text"].str.lower()
-    y_test = test[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]].values
+    logger.info(f"Reading test file")
+    test = process_data(args.input_path, args.test_filename)
+    X_test = test["Text-EN"].str.lower()
+    y_test = test['AlexLabel'].values
     logger.info(f" Using test dataset with {X_test.shape[0]} instances")
 
-    train_file = os.path.join(args.input_path, args.train_filename)
-    logger.info(f"Reading train file {train_file}")
-    train = pd.read_csv(train_file)
+    logger.info(f"Reading train file")
+    train = process_data(args.input_path, args.train_filename)
     train["comment_text"].fillna("fillna")
-    X_train = train["comment_text"].str.lower()
-    y_train = train[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]].values
+    X_train = train["Text-EN"].str.lower()
+    y_train = train['AlexLabel'].values
     logger.info(f" Using train dataset with {X_train.shape[0]} instances")
-    print(" Using train dataset with", X_train.shape[0], "instances.")
 
     tok = get_tokenizer(args)
     tok.fit_on_texts(list(X_train)+list(X_test))
@@ -228,7 +228,7 @@ if __name__ == '__main__':
     avg_pool = GlobalAveragePooling1D()(x)
     max_pool = GlobalMaxPooling1D()(x)
     x = concatenate([avg_pool, max_pool])
-    preds = Dense(6, activation="sigmoid")(x)
+    preds = Dense(1, activation="sigmoid")(x)
     model = Model(sequence_input, preds)
     model.compile(loss='binary_crossentropy', optimizer=Adam(lr=args.learning_rate), metrics=['accuracy'])
     #model.compile(loss='mse', optimizer=Adam(lr=1e-3), metrics=['accuracy'])
