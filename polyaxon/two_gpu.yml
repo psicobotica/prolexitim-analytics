@@ -40,8 +40,9 @@ params:
   epochs: 1
   batch_size: 128
   learning_rate: 0.001
+  patience: 100
 
 
 run:
   cmd:
-    - python src/bilstm_train.py --input_path {{ input_path }} --train_filename {{ train_filename }} --test_filename {{ test_filename }} --models_path {{ models_path }} --tokenizer_file {{ tokenizer_file }} --embedding_path {{ embedding_path }} --embedding_file {{ embedding_file }} --embedding_matrix_file {{ embedding_matrix_file }} --weights_file {{ weights_file }} --max_features {{ max_features }} --max_length {{ max_length }}  --embed_size {{ embed_size }}  --epochs {{ epochs }}  --batch_size {{ batch_size }}  --learning_rate {{ learning_rate }}
+    - python src/bilstm_train.py --input_path {{ input_path }} --train_filename {{ train_filename }} --test_filename {{ test_filename }} --models_path {{ models_path }} --tokenizer_file {{ tokenizer_file }} --embedding_path {{ embedding_path }} --embedding_file {{ embedding_file }} --embedding_matrix_file {{ embedding_matrix_file }} --weights_file {{ weights_file }} --max_features {{ max_features }} --max_length {{ max_length }}  --embed_size {{ embed_size }}  --epochs {{ epochs }}  --batch_size {{ batch_size }}  --learning_rate {{ learning_rate }} --patience {{ patience }}

@@ -1,4 +1,4 @@
-from tools import process_data
+from tools import process_data_classification
 import logging
 import argparse
 import polyaxon_utils
@@ -25,6 +25,7 @@ from keras.optimizers import Adam
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
+from sklearn.metrics import confusion_matrix
 
 
 
@@ -111,6 +112,8 @@ def get_args():
     parser.add_argument('-epochs', '--epochs', type=int, default=5, help='Number of epochs to train')
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.001, help='Learning rate')
     parser.add_argument('-bs', '--batch_size', type=int, default=128, help='Minibatch size')
+    parser.add_argument('-patience', '--patience', type=int, default=5,
+                        help='Number of epochs without change in the accuracy till the training is stopped')
 
     # File arguments
     parser.add_argument('-train_filename', '--train_filename', type=str, default="train.csv",
@@ -181,14 +184,13 @@ if __name__ == '__main__':
 
     args = get_args()
     logger.info(f"Reading test file")
-    test = process_data(args.input_path, args.test_filename)
+    test = process_data_classification(args.input_path, args.test_filename)
     X_test = test["Text-EN"].str.lower()
     y_test = test['AlexLabel'].values
     logger.info(f" Using test dataset with {X_test.shape[0]} instances")
 
     logger.info(f"Reading train file")
-    train = process_data(args.input_path, args.train_filename)
-    train["comment_text"].fillna("fillna")
+    train = process_data_classification(args.input_path, args.train_filename)
     X_train = train["Text-EN"].str.lower()
     y_train = train['AlexLabel'].values
     logger.info(f" Using train dataset with {X_train.shape[0]} instances")
@@ -237,7 +239,7 @@ if __name__ == '__main__':
 
     X_tra, X_val, y_tra, y_val = train_test_split(x_train, y_train, train_size=0.9, random_state=233)
     checkpoint = ModelCheckpoint(os.path.join(args.outputs_dir, args.weights_file), monitor='val_acc', verbose=1, save_best_only=True, mode='max')
-    early = EarlyStopping(monitor="val_acc", mode="max", patience=5)
+    early = EarlyStopping(monitor="val_acc", mode="max", patience=args.patience)
     ra_val = RocAucEvaluation(validation_data=(X_val, y_val), interval=1)
     callbacks_list = [ra_val, checkpoint, early]
     model.fit(X_tra, y_tra, batch_size=args.batch_size, epochs=args.epochs, validation_data=(X_val, y_val),
@@ -245,5 +247,9 @@ if __name__ == '__main__':
 
     y_pred = model.predict(x_test, batch_size=1024, verbose=1)
     score = roc_auc_score(y_test, y_pred)
+    print(y_test)
+    print(y_pred)
+    #cm = confusion_matrix(y_test, y_pred)
     logger.info(f"AUC for test {score}")
+    logger.info(f"Confusion Matrix: {cm}")
     print("AUC for test",score)
