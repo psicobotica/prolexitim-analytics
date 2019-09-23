@@ -108,6 +108,7 @@ def get_args():
     parser.add_argument('-i', '--input_path', help='Path for input files', default=None, type=str, required=True)
 
     # Network arguments
+    parser.add_argument('--factor', type=str, choices=['F1', 'F2', 'F3'], help='Factor we are aiming to predict')
     parser.add_argument('-epochs', '--epochs', type=int, default=5, help='Number of epochs to train')
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.001, help='Learning rate')
     parser.add_argument('-bs', '--batch_size', type=int, default=128, help='Minibatch size')
@@ -185,13 +186,15 @@ if __name__ == '__main__':
     logger.info(f"Reading test file")
     test = process_data_regression(args.input_path, args.test_filename)
     X_test = test["Text-EN"].str.lower()
-    y_test = test['F1'].values
+    y_test = test['F1']
     logger.info(f" Using test dataset with {X_test.shape[0]} instances")
 
     logger.info(f"Reading train file")
     train = process_data_regression(args.input_path, args.train_filename)
     X_train = train["Text-EN"].str.lower()
-    y_train = train['F1'].values
+    y_train = train['F1']
+    y_train_norm = (y_train - y_train.mean())/y_train.std()
+    y_test_norm = (y_test - y_train.mean())/y_train.std()
     logger.info(f" Using train dataset with {X_train.shape[0]} instances")
 
     tok = get_tokenizer(args)
@@ -229,14 +232,14 @@ if __name__ == '__main__':
     avg_pool = GlobalAveragePooling1D()(x)
     max_pool = GlobalMaxPooling1D()(x)
     x = concatenate([avg_pool, max_pool])
-    preds = Dense(1, activation="sigmoid")(x)
+    preds = Dense(1)(x)
     model = Model(sequence_input, preds)
-    model.compile(loss='binary_crossentropy', optimizer=Adam(lr=args.learning_rate), metrics=['accuracy'])
-    #model.compile(loss='mse', optimizer=Adam(lr=1e-3), metrics=['accuracy'])
+    model.compile(loss='mse', optimizer=Adam(lr=args.learning_rate), metrics=['accuracy'])
 
 
 
-    X_tra, X_val, y_tra, y_val = train_test_split(x_train, y_train, train_size=0.9, random_state=233)
+
+    X_tra, X_val, y_tra, y_val = train_test_split(x_train, y_train_norm, train_size=0.9, random_state=233)
     checkpoint = ModelCheckpoint(os.path.join(args.outputs_dir, args.weights_file), monitor='val_acc', verbose=1, save_best_only=True, mode='max')
     early = EarlyStopping(monitor="val_acc", mode="max", patience=args.patience)
     ra_val = RocAucEvaluation(validation_data=(X_val, y_val), interval=1)
@@ -245,6 +248,6 @@ if __name__ == '__main__':
               callbacks=callbacks_list, verbose=1)
 
     y_pred = model.predict(x_test, batch_size=1024, verbose=1)
-    score = roc_auc_score(y_test, y_pred)
+    score = roc_auc_score(y_test_norm, y_pred)
     logger.info(f"AUC for test {score}")
     print("AUC for test",score)
