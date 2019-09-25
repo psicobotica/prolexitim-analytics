@@ -18,7 +18,7 @@ from keras.layers import Dense,Input,LSTM,Bidirectional,Activation,Conv1D,GRU
 from keras.callbacks import Callback
 from keras.layers import Dropout,Embedding,GlobalMaxPooling1D, MaxPooling1D, Add, Flatten
 from keras.preprocessing import text, sequence
-from keras.layers import GlobalAveragePooling1D, GlobalMaxPooling1D, concatenate, SpatialDropout1D
+from keras.layers import GlobalAveragePooling1D, GlobalMaxPooling1D, Concatenate, SpatialDropout1D
 from keras.callbacks import EarlyStopping,ModelCheckpoint
 from keras.models import Model
 from keras.optimizers import Adam
@@ -108,7 +108,8 @@ def get_args():
     parser.add_argument('-i', '--input_path', help='Path for input files', default=None, type=str, required=True)
 
     # Network arguments
-    parser.add_argument('--factor', type=str, choices=['F1', 'F2', 'F3'], help='Factor we are aiming to predict')
+    parser.add_argument('--factor', type=str, choices=['F1', 'F2', 'F3', 'TAS20'], default='TAS20',
+                        help='Factor we are aiming to predict')
     parser.add_argument('-epochs', '--epochs', type=int, default=5, help='Number of epochs to train')
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.001, help='Learning rate')
     parser.add_argument('-bs', '--batch_size', type=int, default=128, help='Minibatch size')
@@ -185,14 +186,15 @@ if __name__ == '__main__':
     args = get_args()
     logger.info(f"Reading test file")
     test = process_data_regression(args.input_path, args.test_filename)
+    print(test)
     X_test = test["Text-EN"].str.lower()
-    y_test = test['F1']
+    y_test = test[args.factor]
     logger.info(f" Using test dataset with {X_test.shape[0]} instances")
 
     logger.info(f"Reading train file")
     train = process_data_regression(args.input_path, args.train_filename)
     X_train = train["Text-EN"].str.lower()
-    y_train = train['F1']
+    y_train = train[args.factor]
     y_train_norm = (y_train - y_train.mean())/y_train.std()
     y_test_norm = (y_test - y_train.mean())/y_train.std()
     logger.info(f" Using train dataset with {X_train.shape[0]} instances")
@@ -225,29 +227,29 @@ if __name__ == '__main__':
             embedding_matrix[i] = embedding_vector
 
     sequence_input = Input(shape=(args.max_length, ))
+    #label_input = Input((4,))
     x = Embedding(args.max_features, args.embed_size, weights=[embedding_matrix], trainable=False)(sequence_input)
     x = SpatialDropout1D(0.2)(x)
+    #x = Concatenate(name='concatenation')([x, label_input])
     x = Bidirectional(GRU(128, return_sequences=True, dropout=0.1, recurrent_dropout=0.1))(x)
     x = Conv1D(64, kernel_size=3, padding="valid", kernel_initializer="glorot_uniform")(x)
     avg_pool = GlobalAveragePooling1D()(x)
     max_pool = GlobalMaxPooling1D()(x)
-    x = concatenate([avg_pool, max_pool])
+    x = Concatenate([avg_pool, max_pool])
     preds = Dense(1)(x)
     model = Model(sequence_input, preds)
     model.compile(loss='mse', optimizer=Adam(lr=args.learning_rate), metrics=['accuracy'])
 
 
-
-
     X_tra, X_val, y_tra, y_val = train_test_split(x_train, y_train_norm, train_size=0.9, random_state=233)
-    checkpoint = ModelCheckpoint(os.path.join(args.outputs_dir, args.weights_file), monitor='val_acc', verbose=1, save_best_only=True, mode='max')
-    early = EarlyStopping(monitor="val_acc", mode="max", patience=args.patience)
-    ra_val = RocAucEvaluation(validation_data=(X_val, y_val), interval=1)
-    callbacks_list = [ra_val, checkpoint, early]
-    model.fit(X_tra, y_tra, batch_size=args.batch_size, epochs=args.epochs, validation_data=(X_val, y_val),
-              callbacks=callbacks_list, verbose=1)
+    checkpoint = ModelCheckpoint(os.path.join(args.outputs_dir, args.weights_file), monitor='val_loss', verbose=1,
+                                 save_best_only=True, mode='min')
+    early = EarlyStopping(monitor="val_loss", mode="min", patience=args.patience)
+    callbacks_list = [checkpoint, early]
+    model.fit(X_tra, y_tra, batch_size=args.batch_size, epochs=args.epochs, validation_data=(X_val, y_val),callbacks=callbacks_list, verbose=1)
+    #model.fit(X_tra, y_tra, batch_size=args.batch_size, epochs=args.epochs, validation_data=(X_val, y_val), verbose=1)
 
     y_pred = model.predict(x_test, batch_size=1024, verbose=1)
-    score = roc_auc_score(y_test_norm, y_pred)
-    logger.info(f"AUC for test {score}")
-    print("AUC for test",score)
+    val_mse, val_mae = model.evaluate(x_test, y_test_norm)
+    print(val_mse)
+    logger.info(f"Mean Absolute Error for test {val_mse}")
