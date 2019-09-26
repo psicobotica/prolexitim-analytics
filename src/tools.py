@@ -31,7 +31,6 @@ def process_data_regression(data_path, data_file):
     """
     file = os.path.join(data_path, data_file)
     data = pd.read_csv(file, usecols=['Text-EN','card', 'TAS20', 'F1', 'F2', 'F3'])
-    data.card = data.card
     dataDummies = pd.get_dummies(data['card'], prefix='card')
     data = pd.concat([data, dataDummies], axis=1)
 

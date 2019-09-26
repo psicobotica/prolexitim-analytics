@@ -35,7 +35,7 @@ params:
   embedding_matrix_file: embedding_matrix.pk
   weights_file: weights_base.best.hdf5
   max_features: 1000
-  max_length: 150
+  max_length: 284
   embed_size: 300
   epochs: 3
   patience: 300

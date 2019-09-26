@@ -18,7 +18,7 @@ from keras.layers import Dense,Input,LSTM,Bidirectional,Activation,Conv1D,GRU
 from keras.callbacks import Callback
 from keras.layers import Dropout,Embedding,GlobalMaxPooling1D, MaxPooling1D, Add, Flatten
 from keras.preprocessing import text, sequence
-from keras.layers import GlobalAveragePooling1D, GlobalMaxPooling1D, Concatenate, SpatialDropout1D
+from keras.layers import GlobalAveragePooling1D, GlobalMaxPooling1D, Concatenate, concatenate, SpatialDropout1D, Reshape, RepeatVector
 from keras.callbacks import EarlyStopping,ModelCheckpoint
 from keras.models import Model
 from keras.optimizers import Adam
@@ -186,25 +186,35 @@ if __name__ == '__main__':
     args = get_args()
     logger.info(f"Reading test file")
     test = process_data_regression(args.input_path, args.test_filename)
-    print(test)
-    X_test = test["Text-EN"].str.lower()
+    X_test = test.drop(args.factor, axis=1)
+    #X_test = X_test["Text-EN"].str.lower()
+    texts_test = X_test["Text-EN"].str.lower()
+    cards_test = X_test.filter(regex="card_.*")  # Using a regular expression cause some cards may not be in test.
     y_test = test[args.factor]
     logger.info(f" Using test dataset with {X_test.shape[0]} instances")
 
     logger.info(f"Reading train file")
     train = process_data_regression(args.input_path, args.train_filename)
-    X_train = train["Text-EN"].str.lower()
+    X_train = train.drop(args.factor, axis=1)
+    #X_train["Text-EN"] = X_train["Text-EN"].str.lower()
+    texts_train = X_train["Text-EN"].str.lower()
+    cards_train = X_train.filter(regex="card_.*")  # Using a regular expression cause some cards may not be in train.
     y_train = train[args.factor]
     y_train_norm = (y_train - y_train.mean())/y_train.std()
     y_test_norm = (y_test - y_train.mean())/y_train.std()
     logger.info(f" Using train dataset with {X_train.shape[0]} instances")
 
     tok = get_tokenizer(args)
-    tok.fit_on_texts(list(X_train)+list(X_test))
-    X_train = tok.texts_to_sequences(X_train)
-    X_test = tok.texts_to_sequences(X_test)
-    x_train = sequence.pad_sequences(X_train, maxlen=args.max_length)
-    x_test = sequence.pad_sequences(X_test, maxlen=args.max_length)
+    #tok.fit_on_texts(list(X_train)+list(X_test))
+    tok.fit_on_texts(list(texts_train) + list(texts_test))
+    #X_train = tok.texts_to_sequences(X_train)
+    #X_test = tok.texts_to_sequences(X_test)
+    texts_train = tok.texts_to_sequences(texts_train)
+    texts_test = tok.texts_to_sequences(texts_test)
+    #x_train = sequence.pad_sequences(X_train, maxlen=args.max_length)
+    #x_test = sequence.pad_sequences(X_test, maxlen=args.max_length)
+    x_train = sequence.pad_sequences(texts_train, maxlen=args.max_length)
+    x_test = sequence.pad_sequences(texts_test, maxlen=args.max_length)
 
     embeddings_index = {}
     with open(os.path.join(args.embedding_path, args.embedding_file), encoding='utf8') as f:
@@ -227,29 +237,39 @@ if __name__ == '__main__':
             embedding_matrix[i] = embedding_vector
 
     sequence_input = Input(shape=(args.max_length, ))
-    #label_input = Input((4,))
+   # y = tf.keras.backend.repeat(label_input, args.max_length)
+
     x = Embedding(args.max_features, args.embed_size, weights=[embedding_matrix], trainable=False)(sequence_input)
     x = SpatialDropout1D(0.2)(x)
-    #x = Concatenate(name='concatenation')([x, label_input])
+    label_input = Input(shape=(len(cards_train.columns),))
+    x_1 = RepeatVector(args.max_length)(label_input)
+    #x = Concatenate(name='concatenation')([x, x_1])
+    x = concatenate([x, x_1])
     x = Bidirectional(GRU(128, return_sequences=True, dropout=0.1, recurrent_dropout=0.1))(x)
     x = Conv1D(64, kernel_size=3, padding="valid", kernel_initializer="glorot_uniform")(x)
     avg_pool = GlobalAveragePooling1D()(x)
     max_pool = GlobalMaxPooling1D()(x)
-    x = Concatenate([avg_pool, max_pool])
+    x = concatenate([avg_pool, max_pool])
     preds = Dense(1)(x)
-    model = Model(sequence_input, preds)
+    model = Model(inputs=[sequence_input, label_input], outputs=preds)
     model.compile(loss='mse', optimizer=Adam(lr=args.learning_rate), metrics=['accuracy'])
+    print(cards_train.values.shape)
+    print(y_train_norm.shape)
+    print(np.array(texts_train).shape)
+    model.summary()
+    model.fit(x=[np.array(texts_train), cards_train.values], y=y_train_norm, batch_size=args.batch_size, epochs=args.epochs)
 
-
-    X_tra, X_val, y_tra, y_val = train_test_split(x_train, y_train_norm, train_size=0.9, random_state=233)
-    checkpoint = ModelCheckpoint(os.path.join(args.outputs_dir, args.weights_file), monitor='val_loss', verbose=1,
-                                 save_best_only=True, mode='min')
-    early = EarlyStopping(monitor="val_loss", mode="min", patience=args.patience)
-    callbacks_list = [checkpoint, early]
-    model.fit(X_tra, y_tra, batch_size=args.batch_size, epochs=args.epochs, validation_data=(X_val, y_val),callbacks=callbacks_list, verbose=1)
-    #model.fit(X_tra, y_tra, batch_size=args.batch_size, epochs=args.epochs, validation_data=(X_val, y_val), verbose=1)
-
-    y_pred = model.predict(x_test, batch_size=1024, verbose=1)
-    val_mse, val_mae = model.evaluate(x_test, y_test_norm)
-    print(val_mse)
-    logger.info(f"Mean Absolute Error for test {val_mse}")
+    # X_tra, X_val, y_tra, y_val = train_test_split(x_train, y_train_norm, train_size=0.9, random_state=233)
+    #
+    # checkpoint = ModelCheckpoint(os.path.join(args.outputs_dir, args.weights_file), monitor='val_loss', verbose=1,
+    #                              save_best_only=True, mode='min')
+    # early = EarlyStopping(monitor="val_loss", mode="min", patience=args.patience)
+    # callbacks_list = [checkpoint, early]
+    # model.fit(X_tra, y_tra, batch_size=args.batch_size, epochs=args.epochs, validation_data=(X_val, y_val),callbacks=callbacks_list, verbose=1)
+    # #model.fit(X_tra, y_tra, batch_size=args.batch_size, epochs=args.epochs, validation_data=(X_val, y_val), verbose=1)
+    #
+    # y_pred = model.predict(x_test, batch_size=1024, verbose=1)
+    # val_mse, val_mae = model.evaluate(x_test, y_test_norm)
+    # print(val_mse)
+    #logger.info(f"Mean Absolute Error for test {val_mse}")
+    print("Todo bien")
