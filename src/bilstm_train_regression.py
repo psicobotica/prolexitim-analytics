@@ -2,19 +2,11 @@ from tools import process_data_regression
 from tools import Configuration
 from tools import get_args
 from tools import get_tokenizer
-
 import logging
 import argparse
-
-
 import os
 import pickle
-
-
 import tensorflow as tf
-
-
-
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import keras
@@ -26,7 +18,6 @@ from keras.layers import GlobalAveragePooling1D, GlobalMaxPooling1D, Concatenate
 from keras.callbacks import EarlyStopping,ModelCheckpoint
 from keras.models import Model
 from keras.optimizers import Adam
-
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 
