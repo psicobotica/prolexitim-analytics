@@ -34,7 +34,7 @@ params:
   max_features: 1000
   max_length: 150
   embed_size: 300
-  epochs: 5
+  epochs: 20
   patience: 300
   batch_size: 128
   learning_rate: 0.001
@@ -42,4 +42,4 @@ params:
 
 run:
   cmd:
-    - python src/bilstm_train_classification.py  --models_path {{ models_path }} --tokenizer_file {{ tokenizer_file }} --embedding_path {{ embedding_path }} --embedding_file {{ embedding_file }} --embedding_matrix_file {{ embedding_matrix_file }} --weights_file {{ weights_file }} --max_features {{ max_features }} --max_length {{ max_length }}  --embed_size {{ embed_size }}  --epochs {{ epochs }}  --batch_size {{ batch_size }}  --learning_rate {{ learning_rate }} --patience {{ patience }}
+    - python src/bilstm_train_classification.py --input_path /data/serendeepia/prolexitim_alexitimia/20190920_prolexytim_analytics --train_filename train.csv --test_filename test.csv --models_path {{ models_path }} --tokenizer_file {{ tokenizer_file }} --embedding_path {{ embedding_path }} --embedding_file {{ embedding_file }} --embedding_matrix_file {{ embedding_matrix_file }} --weights_file {{ weights_file }} --max_features {{ max_features }}  --embed_size {{ embed_size }}  --epochs {{ epochs }}  --batch_size {{ batch_size }}  --learning_rate {{ learning_rate }} --patience {{ patience }}

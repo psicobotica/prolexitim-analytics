@@ -2,6 +2,7 @@ from tools import process_data_classification
 from tools import Configuration
 from tools import get_args
 from tools import get_tokenizer
+from tools import number_sentences
 import logging
 import argparse
 import os
@@ -19,7 +20,7 @@ from keras.callbacks import EarlyStopping,ModelCheckpoint
 from keras.models import Model
 from keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, confusion_matrix
 
 
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ if __name__ == '__main__':
 
     args = get_args()
     logger.info(f"Reading test file")
-    test_file = "/data/serendeepia/prolexitim_alexitimia/20190920_prolexytim_analytics/test.csv"
+    test_file = os.path.join(args.input_path, args.test_filename)
     test = process_data_classification(test_file)
     X_test = test.drop('AlexLabel', axis=1)
     texts_test = X_test["Text-EN"].str.lower()
@@ -56,7 +57,7 @@ if __name__ == '__main__':
     logger.info(f" Using test dataset with {X_test.shape[0]} instances")
 
     logger.info(f"Reading train file")
-    train_file = "/data/serendeepia/prolexitim_alexitimia/20190920_prolexytim_analytics/train.csv"
+    train_file = os.path.join(args.input_path, args.train_filename)
     train = process_data_classification(train_file)
     X_train = train.drop('AlexLabel', axis=1)
     texts_train = X_train["Text-EN"].str.lower()
@@ -70,8 +71,9 @@ if __name__ == '__main__':
     tok.fit_on_texts(list(texts_train) + list(texts_test))
     texts_train = tok.texts_to_sequences(texts_train)
     texts_test = tok.texts_to_sequences(texts_test)
-    x_train = sequence.pad_sequences(texts_train, maxlen=args.max_length)
-    x_test = sequence.pad_sequences(texts_test, maxlen=args.max_length)
+    max_length = train.number_sentences.max()
+    x_train = sequence.pad_sequences(texts_train, maxlen=max_length)
+    x_test = sequence.pad_sequences(texts_test, maxlen=max_length)
 
     embeddings_index = {}
     with open(os.path.join(args.embedding_path, args.embedding_file), encoding='utf8') as f:
@@ -93,12 +95,12 @@ if __name__ == '__main__':
             # words not found in embedding index will be all-zeros.
             embedding_matrix[i] = embedding_vector
 
-    text_input = Input(shape=(args.max_length,), name='text_input')
+    text_input = Input(shape=(max_length,), name='text_input')
     x = Embedding(args.max_features, args.embed_size, weights=[embedding_matrix], trainable=False)(text_input)
 
     # Adding context
     auxiliary_input = Input(shape=(len(cards_train.columns),), name='aux_input')
-    x_1 = RepeatVector(args.max_length)(auxiliary_input)
+    x_1 = RepeatVector(max_length)(auxiliary_input)
     x = Concatenate()([x, x_1])
 
     x = Bidirectional(GRU(128, return_sequences=True, dropout=0.1, recurrent_dropout=0.1))(x)
@@ -116,6 +118,8 @@ if __name__ == '__main__':
 
     y_pred = model.predict([x_test, cards_test], batch_size=1024, verbose=1)
     score = roc_auc_score(y_test, y_pred)
+    y_pred_classes = [1 * (x[0]>=0.5) for x in y_pred]
+    cm = confusion_matrix(y_test, y_pred_classes)
     logger.info(f"AUC for test {score}")
     logger.info("Saving model")
     model.save_weights(os.path.join(args.outputs_dir, args.weights_file))

@@ -61,6 +61,7 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     # Positional mandatory arguments
+    parser.add_argument('-i', '--input_path', help='Path for input files', default=None, type=str, required=True)
     parser.add_argument('-l', '--log_path', help='Path for log files', default=None, type=str, required=False)
 
     # Network arguments
@@ -73,6 +74,10 @@ def get_args():
                         help='Number of epochs without change in the accuracy till the training is stopped')
 
     # File arguments
+    parser.add_argument('-train_filename', '--train_filename', type=str, default="train.csv",
+                        help='File with dataset for training.')
+    parser.add_argument('-test_filename', '--test_filename', type=str, default="test.csv",
+                        help='File with dataset for testing.')
     parser.add_argument('-models_path', '--models_path', type=str, default='./data/',
                         help='Directory where the model is stored')
     parser.add_argument('-tokenizer_file', '--tokenizer_file', type=str, default='tokenizer.pk',
@@ -93,7 +98,6 @@ def get_args():
     # Embedding arguments:
     parser.add_argument('-max_features', '--max_features', type=int, default=100000,
                         help='Maximum number of words to keep, based on word frequency.')
-    parser.add_argument('-max_len', '--max_length', type=int, default=150, help='Maximum length of the sequences.')
     parser.add_argument('-embed_size', '--embed_size', type=int, default=300, help='Size of the embedding matrix')
 
 
@@ -126,6 +130,10 @@ def AlextoFloat(x):
     return p
 
 
+def number_sentences(text):
+    return len(text.split())
+
+
 def process_data_classification(file_path):
     """
     Processes the data extracting only the columns we are interested in:
@@ -135,6 +143,7 @@ def process_data_classification(file_path):
     file = os.path.join(file_path)
     data = pd.read_csv(file, usecols=['Text-EN','AlexLabel', 'card'])
     data['AlexLabel'] = data.AlexLabel.apply(lambda x: AlextoFloat(x))
+    data['number_sentences'] = data['Text-EN'].apply(lambda x: number_sentences(x))
 
     return data
 
@@ -148,5 +157,6 @@ def process_data_regression(file_path):
     data = pd.read_csv(file_path, usecols=['Text-EN','card', 'TAS20', 'F1', 'F2', 'F3'])
     dataDummies = pd.get_dummies(data['card'], prefix='card')
     data = pd.concat([data, dataDummies], axis=1)
+    data['number_sentences'] = data['Text-EN'].apply(lambda x: number_sentences(x))
 
     return data
