@@ -13,7 +13,7 @@ import types
 
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-
+import keras
 from keras.layers import Dense,Input,LSTM,Bidirectional,Activation,Conv1D,GRU
 from keras.callbacks import Callback
 from keras.layers import Dropout,Embedding,GlobalMaxPooling1D, MaxPooling1D, Add, Flatten
@@ -187,7 +187,6 @@ if __name__ == '__main__':
     logger.info(f"Reading test file")
     test = process_data_regression(args.input_path, args.test_filename)
     X_test = test.drop(args.factor, axis=1)
-    #X_test = X_test["Text-EN"].str.lower()
     texts_test = X_test["Text-EN"].str.lower()
     cards_test = X_test.filter(regex="card_.*")  # Using a regular expression cause some cards may not be in test.
     y_test = test[args.factor]
@@ -196,7 +195,6 @@ if __name__ == '__main__':
     logger.info(f"Reading train file")
     train = process_data_regression(args.input_path, args.train_filename)
     X_train = train.drop(args.factor, axis=1)
-    #X_train["Text-EN"] = X_train["Text-EN"].str.lower()
     texts_train = X_train["Text-EN"].str.lower()
     cards_train = X_train.filter(regex="card_.*")  # Using a regular expression cause some cards may not be in train.
     y_train = train[args.factor]
@@ -205,14 +203,9 @@ if __name__ == '__main__':
     logger.info(f" Using train dataset with {X_train.shape[0]} instances")
 
     tok = get_tokenizer(args)
-    #tok.fit_on_texts(list(X_train)+list(X_test))
     tok.fit_on_texts(list(texts_train) + list(texts_test))
-    #X_train = tok.texts_to_sequences(X_train)
-    #X_test = tok.texts_to_sequences(X_test)
     texts_train = tok.texts_to_sequences(texts_train)
     texts_test = tok.texts_to_sequences(texts_test)
-    #x_train = sequence.pad_sequences(X_train, maxlen=args.max_length)
-    #x_test = sequence.pad_sequences(X_test, maxlen=args.max_length)
     x_train = sequence.pad_sequences(texts_train, maxlen=args.max_length)
     x_test = sequence.pad_sequences(texts_test, maxlen=args.max_length)
 
@@ -236,40 +229,28 @@ if __name__ == '__main__':
             # words not found in embedding index will be all-zeros.
             embedding_matrix[i] = embedding_vector
 
-    sequence_input = Input(shape=(args.max_length, ))
-   # y = tf.keras.backend.repeat(label_input, args.max_length)
-
-    x = Embedding(args.max_features, args.embed_size, weights=[embedding_matrix], trainable=False)(sequence_input)
+    text_input = Input(shape=(args.max_length,), name='text_input')
+    x = Embedding(args.max_features, args.embed_size, weights=[embedding_matrix], trainable=False)(text_input)
     x = SpatialDropout1D(0.2)(x)
-    label_input = Input(shape=(len(cards_train.columns),))
-    x_1 = RepeatVector(args.max_length)(label_input)
-    #x = Concatenate(name='concatenation')([x, x_1])
-    x = concatenate([x, x_1])
+
+    # Adding context
+    auxiliary_input = Input(shape=(len(cards_train.columns),), name='aux_input')
+    x_1 = RepeatVector(args.max_length)(auxiliary_input)
+    x = keras.layers.concatenate([x, x_1])
+
     x = Bidirectional(GRU(128, return_sequences=True, dropout=0.1, recurrent_dropout=0.1))(x)
     x = Conv1D(64, kernel_size=3, padding="valid", kernel_initializer="glorot_uniform")(x)
     avg_pool = GlobalAveragePooling1D()(x)
     max_pool = GlobalMaxPooling1D()(x)
     x = concatenate([avg_pool, max_pool])
-    preds = Dense(1)(x)
-    model = Model(inputs=[sequence_input, label_input], outputs=preds)
-    model.compile(loss='mse', optimizer=Adam(lr=args.learning_rate), metrics=['accuracy'])
-    print(cards_train.values.shape)
-    print(y_train_norm.shape)
-    print(np.array(texts_train).shape)
-    model.summary()
-    model.fit(x=[np.array(texts_train), cards_train.values], y=y_train_norm, batch_size=args.batch_size, epochs=args.epochs)
 
-    # X_tra, X_val, y_tra, y_val = train_test_split(x_train, y_train_norm, train_size=0.9, random_state=233)
-    #
-    # checkpoint = ModelCheckpoint(os.path.join(args.outputs_dir, args.weights_file), monitor='val_loss', verbose=1,
-    #                              save_best_only=True, mode='min')
-    # early = EarlyStopping(monitor="val_loss", mode="min", patience=args.patience)
-    # callbacks_list = [checkpoint, early]
-    # model.fit(X_tra, y_tra, batch_size=args.batch_size, epochs=args.epochs, validation_data=(X_val, y_val),callbacks=callbacks_list, verbose=1)
-    # #model.fit(X_tra, y_tra, batch_size=args.batch_size, epochs=args.epochs, validation_data=(X_val, y_val), verbose=1)
-    #
-    # y_pred = model.predict(x_test, batch_size=1024, verbose=1)
-    # val_mse, val_mae = model.evaluate(x_test, y_test_norm)
+    main_output = Dense(1, name='main_output')(x)
+
+    model = Model(inputs=[text_input, auxiliary_input], outputs=[main_output])
+    model.compile(loss='mse', optimizer=Adam(lr=args.learning_rate), metrics=['accuracy'])
+    model.fit([np.array(x_train), cards_train.values], [y_train_norm],
+              epochs=args.epochs, batch_size=args.batch_size)
+
+    # Little issue for dummies:
+    # val_mse, val_mae = model.evaluate([np.array(x_test), cards_test.values], [y_test_norm])
     # print(val_mse)
-    #logger.info(f"Mean Absolute Error for test {val_mse}")
-    print("Todo bien")
