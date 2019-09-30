@@ -121,5 +121,7 @@ if __name__ == '__main__':
     y_pred_classes = [1 * (x[0]>=0.5) for x in y_pred]
     cm = confusion_matrix(y_test, y_pred_classes)
     logger.info(f"AUC for test {score}")
+    logger.info("Confusion Matrix:")
+    logger.info(cm)
     logger.info("Saving model")
     model.save_weights(os.path.join(args.outputs_dir, args.weights_file))
