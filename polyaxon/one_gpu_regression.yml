@@ -1,0 +1,46 @@
+---
+version: 1
+
+kind: experiment
+
+framework: tensorflow
+
+environment:
+  resources:
+    cpu:
+      requests: 4
+      limits: 4
+    memory:
+      requests: 8000
+      limits: 10000
+    gpu:
+      limits: 1
+
+build:
+  image: tensorflow/tensorflow:1.14.0-gpu-py3
+  build_steps:
+    - pip install --no-cache-dir -U polyaxon-cli
+    - pip install --no-cache-dir pandas
+    - pip install --no-cache-dir keras
+    - pip install --no-cache-dir sklearn
+
+params:
+  models_path: /data/models/prolexitim_alexitimia
+  tokenizer_file: tokenizer.pk
+  embedding_path: /data/models/toxic_speech
+  embedding_file: SBW-vectors-300-min5.txt
+  embedding_matrix_file: embedding_matrix.pk
+  weights_file: weights_base.best.hdf5
+  max_features: 1000
+  max_length: 284
+  embed_size: 300
+  epochs: 20
+  patience: 300
+  batch_size: 128
+  learning_rate: 0.001
+  factor: TAS20
+
+
+run:
+  cmd:
+    - python src/bilstm_train_regression.py  --input_path /data/serendeepia/prolexitim_alexitimia/20190920_prolexytim_analytics --train_filename train.csv --test_filename test.csv --factor {{factor}} --models_path {{ models_path }} --tokenizer_file {{ tokenizer_file }} --embedding_path {{ embedding_path }} --embedding_file {{ embedding_file }} --embedding_matrix_file {{ embedding_matrix_file }} --weights_file {{ weights_file }} --max_features {{ max_features }}  --embed_size {{ embed_size }}  --epochs {{ epochs }}  --batch_size {{ batch_size }}  --learning_rate {{ learning_rate }} --patience {{ patience }}
